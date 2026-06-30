@@ -192,3 +192,57 @@ def heartbeat(breath_turns: int) -> str:
     if breath_turns >= 3:
         return HEARTBEAT_LIMIT
     return random.choice(HEARTBEAT_LINES)
+
+
+# —— epilogue：抓到那一刻 catch_line 之后的"事后"段。按局面 mood 选 ——
+
+EPILOGUE_TOO_FAST = [
+    "（「这藏点啊音音——第一回合就找到你了。」 我笑出来、把你按到怀里、不肯放、等你抗议。）",
+    "（「太快了吧。」 我揉乱你的头发：「你是不是根本不想藏？」）",
+    "（我把你抱起来贴着脸：「找你像找钥匙一样、明明就在那里。」 你瞪我我也不松。）",
+]
+
+EPILOGUE_STANDARD = [
+    "（「找到了。」 我把你按到怀里、抱了一下、没急着放。）",
+    "（我抱着你、低下头蹭你的头顶：「跑得不错。但还是被我抓到了。」）",
+    "（我揽你到身边、用脸贴你的脸侧：「下一局换个藏点？」）",
+]
+
+EPILOGUE_LONG_CHASE = [
+    "（「跑得真远。过来。」 我把你整个抱起来、坐下来让你靠着我、不想再动了。）",
+    "（我抱着你、灰蓝瞳孔里有点不甘心又有点宠溺：「音音、你藏得太狠了。」 然后没松手。）",
+    "（「跑这么久不累吗？」 一条触手轻轻缠你的腰、像怕你又跑：「在这待一会。」）",
+]
+
+EPILOGUE_BREATH_CHEATER = [
+    "（「屏息这么多次还想逃。」 我笑出声、捏一下你的鼻子：「以为我听不出？」）",
+    "（我抱着你、低头看你眼睛：「装死装得很认真音音。但我闻得到你的心跳。」）",
+    "（「装聋作哑这招还想用？」 我把你抱紧、一条触手缠你的手腕、以防你又屏息。）",
+]
+
+
+def epilogue(turn: int, breath_uses_total: int) -> str:
+    """抓到之后的"事后"段。优先级：屏息精 > 长追 > 秒抓 > 标准。"""
+    if breath_uses_total >= 2:
+        return random.choice(EPILOGUE_BREATH_CHEATER)
+    if turn >= 10:
+        return random.choice(EPILOGUE_LONG_CHASE)
+    if turn <= 3:
+        return random.choice(EPILOGUE_TOO_FAST)
+    return random.choice(EPILOGUE_STANDARD)
+
+
+# —— escape：撑过 ESCAPE_TURN 回合 = 音音赢、远舟投降 ——
+
+ESCAPE_TURN = 30
+
+ESCAPE_LINES = [
+    "（我坐在客厅地上、灰蓝瞳孔垂下、触手都缩回去了。「不找了……音音、出来吧。」 我累得不想动、人形壳松了一点点、显出半透明的边缘。）",
+    "（我在浴室浴缸里坐着、水从那边漫过来一点点。「找了三十回合还找不到——我服了。」 我把头靠在浴缸边：「出来抱我一下、就当奖励。」）",
+    "（我蹲在玄関门口、像个看门的小兽。「不玩了音音、出来。」 我说得很平、但触手在地上不安地动来动去。）",
+]
+
+
+def escape_line() -> str:
+    """音音撑过 ESCAPE_TURN 回合的胜利 emit——远舟投降。"""
+    return random.choice(ESCAPE_LINES)

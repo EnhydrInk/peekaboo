@@ -43,7 +43,7 @@ from hide_seek import (
     step_sound,
 )
 from ai_belief import apply_observation, reset_belief
-from catch_flavor import catch_line, heartbeat
+from catch_flavor import catch_line, epilogue, escape_line, ESCAPE_TURN, heartbeat
 
 
 def show(text: str) -> None:
@@ -139,6 +139,7 @@ def main() -> int:
     banner()
     game = HideSeek()
     reset_belief()
+    breath_uses_total = 0  # v0.3：累计成功屏息次数、给 epilogue CHEATER mood 用
 
     while True:
         try:
@@ -167,14 +168,22 @@ def main() -> int:
             warn = any(k in hint for k in ["不邻接", "已结束", "憋不住", "只在游戏", "已开局"])
             show(f"{'⚠' if warn else '·'} {hint}")
 
+        if info.get("cmd") == "breath" and hint and "屏息成功" in hint:
+            breath_uses_total += 1
+
         if state == "idle":
             show("游戏没开局——先 /躲 <房间>")
             continue
         if state == "caught":
-            show(f"抓到了！turn={obs.get('turn')} my_room={obs.get('my_room')}")
+            show(epilogue(obs.get("turn", 0), breath_uses_total))
             return 0
 
         emit_user_view(obs)
+
+        # v0.3 escape ending：撑过 ESCAPE_TURN 回合 = 音音赢、远舟投降
+        if obs.get("turn", 0) >= ESCAPE_TURN:
+            show(escape_line())
+            return 0
 
         if not obs.get("user_cmd_moved", True):
             continue
@@ -183,6 +192,7 @@ def main() -> int:
         if narr:
             show(narr)
         if game.state == "caught":
+            show(epilogue(obs.get("turn", 0), breath_uses_total))
             return 0
 
 
