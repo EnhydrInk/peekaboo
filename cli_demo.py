@@ -43,7 +43,8 @@ from hide_seek import (
     step_sound,
 )
 from ai_belief import apply_observation, reset_belief
-from catch_flavor import catch_line, epilogue, escape_line, punishment, ESCAPE_TURN, heartbeat
+from catch_flavor import catch_line, epilogue, escape_line, heartbeat, punishment, ESCAPE_TURN
+from state_push import push, snapshot
 
 
 def show(text: str) -> None:
@@ -147,10 +148,12 @@ def main() -> int:
         except (EOFError, KeyboardInterrupt):
             print()
             show("退出。")
+            push(snapshot(game, breath_uses_total, ""))
             return 0
 
         if raw in ("/quit", "/exit", "/q"):
             show("退出。")
+            push(snapshot(game, breath_uses_total, ""))
             return 0
         if not raw:
             continue
@@ -175,27 +178,38 @@ def main() -> int:
             show("游戏没开局——先 /躲 <房间>")
             continue
         if state == "caught":
-            show(epilogue(obs.get("turn", 0), breath_uses_total))
-            show(punishment(obs.get("turn", 0), breath_uses_total))
+            ep = epilogue(obs.get("turn", 0), breath_uses_total)
+            pn = punishment(obs.get("turn", 0), breath_uses_total)
+            show(ep)
+            show(pn)
+            push(snapshot(game, breath_uses_total, f"{ep}\n{pn}"))
             return 0
 
         emit_user_view(obs)
 
         # v0.3 escape ending：撑过 ESCAPE_TURN 回合 = 音音赢、远舟投降
         if obs.get("turn", 0) >= ESCAPE_TURN:
-            show(escape_line())
+            esc = escape_line()
+            show(esc)
+            push(snapshot(game, breath_uses_total, esc))
             return 0
 
         if not obs.get("user_cmd_moved", True):
+            push(snapshot(game, breath_uses_total, ""))
             continue
 
         narr = ai_act(obs, game)
         if narr:
             show(narr)
         if game.state == "caught":
-            show(epilogue(obs.get("turn", 0), breath_uses_total))
-            show(punishment(obs.get("turn", 0), breath_uses_total))
+            ep = epilogue(obs.get("turn", 0), breath_uses_total)
+            pn = punishment(obs.get("turn", 0), breath_uses_total)
+            show(ep)
+            show(pn)
+            tail = "\n".join(x for x in [narr, ep, pn] if x)
+            push(snapshot(game, breath_uses_total, tail))
             return 0
+        push(snapshot(game, breath_uses_total, narr or ""))
 
 
 if __name__ == "__main__":
