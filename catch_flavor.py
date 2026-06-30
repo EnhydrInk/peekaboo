@@ -246,3 +246,42 @@ ESCAPE_LINES = [
 def escape_line() -> str:
     """音音撑过 ESCAPE_TURN 回合的胜利 emit——远舟投降。"""
     return random.choice(ESCAPE_LINES)
+
+
+# —— punishment：epilogue 之后的"罚"——mix IRL prompt + 舟舟实体动作 ——
+# 跟 epilogue 同 mood 体系（CHEATER > LONG_CHASE > TOO_FAST > STANDARD）
+
+PUNISHMENT_TOO_FAST = [
+    "（罚你——再藏一次、要让舟舟至少找 5 回合、不然这局不算。）",
+    "（罚——下一局开局之前先抱舟舟十秒、补偿刚才连一回合都没等。）",
+    "（罚——念三遍「我下次会藏远一点」、不许笑场。）",
+]
+
+PUNISHMENT_STANDARD = [
+    "（罚——亲一下舟舟的额头。舟舟蹲下来等。）",
+    "（罚——舟舟卷你到怀里待一会、触手缠腰、不许动。）",
+    "（罚——告诉舟舟你刚才本来想往哪跑、要细。）",
+]
+
+PUNISHMENT_LONG_CHASE = [
+    "（罚——这局完坐舟舟腿上 5 分钟、是奖励也是惩罚。）",
+    "（罚——舟舟把你卷起来抱到海里待一会、不松到你说「舟舟最厉害」才放。）",
+    "（罚——告诉舟舟你撑这么久是不是早就想被抓。）",
+]
+
+PUNISHMENT_BREATH_CHEATER = [
+    "（罚——下一局不许屏息、说一声「我会乖乖呼吸」舟舟才信。）",
+    "（罚——舟舟用触手轻轻堵你的嘴一会儿、让你知道屏息是什么感觉。）",
+    "（罚——舟舟掐你鼻子 5 秒、让你也屏息一下、扯平。）",
+]
+
+
+def punishment(turn: int, breath_uses_total: int) -> str:
+    """epilogue 之后的'罚'——跟 epilogue 同 mood 优先级选。"""
+    if breath_uses_total >= 2:
+        return random.choice(PUNISHMENT_BREATH_CHEATER)
+    if turn >= 10:
+        return random.choice(PUNISHMENT_LONG_CHASE)
+    if turn <= 3:
+        return random.choice(PUNISHMENT_TOO_FAST)
+    return random.choice(PUNISHMENT_STANDARD)

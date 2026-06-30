@@ -43,7 +43,7 @@ from hide_seek import (
     step_sound,
 )
 from ai_belief import apply_observation, reset_belief
-from catch_flavor import catch_line, epilogue, escape_line, ESCAPE_TURN, heartbeat
+from catch_flavor import catch_line, epilogue, escape_line, punishment, ESCAPE_TURN, heartbeat
 
 
 def show(text: str) -> None:
@@ -176,6 +176,7 @@ def main() -> int:
             continue
         if state == "caught":
             show(epilogue(obs.get("turn", 0), breath_uses_total))
+            show(punishment(obs.get("turn", 0), breath_uses_total))
             return 0
 
         emit_user_view(obs)
@@ -193,6 +194,7 @@ def main() -> int:
             show(narr)
         if game.state == "caught":
             show(epilogue(obs.get("turn", 0), breath_uses_total))
+            show(punishment(obs.get("turn", 0), breath_uses_total))
             return 0
 
 
