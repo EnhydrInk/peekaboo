@@ -43,6 +43,7 @@ from hide_seek import (
     step_sound,
 )
 from ai_belief import apply_observation, reset_belief
+from catch_flavor import catch_line, heartbeat
 
 
 def show(text: str) -> None:
@@ -51,7 +52,7 @@ def show(text: str) -> None:
 
 def banner() -> None:
     print("=" * 56)
-    print("  躲猫猫 v0.4 — 你藏，AI（哥哥）来找")
+    print("  躲猫猫 v0.4 — 你藏，AI（远舟）来找")
     print("=" * 56)
     print()
     print("地图：")
@@ -79,6 +80,9 @@ def emit_user_view(obs: dict) -> None:
     her_nb = obs.get("her_neighbors") or []
     nb_str = ("、能去 " + "/".join(her_nb)) if her_nb else ""
     show(f"[turn={turn}] AI 在 {my_room} · {bell_label}{nb_str}")
+    # v0.5：屏息时给藏者端 emit 心跳体感、breath_turns ≥ 3 是反弹边缘警告
+    if obs.get("holding_breath"):
+        show(heartbeat(int(obs.get("breath_turns", 0))))
 
 
 def ai_act(obs: dict, game: HideSeek) -> str | None:
@@ -92,7 +96,7 @@ def ai_act(obs: dict, game: HideSeek) -> str | None:
     """
     br = apply_observation(obs)
     reason = br.get("reason", "")
-    show(f"[哥哥心里话] {reason}")
+    show(f"[远舟心里话] {reason}")
 
     my_room = obs.get("my_room")
     next_room = br.get("next_room")
@@ -113,7 +117,7 @@ def ai_act(obs: dict, game: HideSeek) -> str | None:
                 game,
             )
             if game.state == "caught":
-                return f"AI 翻 {chosen}——抓到你了！（在 {my_room}）"
+                return f"AI 翻 {chosen}——抓到你了！（在 {my_room}）\n  {catch_line(chosen)}"
             return f"AI 在 {my_room} 翻 {chosen}——空的"
         return f"AI 在 {my_room} 转、没看到你"
 

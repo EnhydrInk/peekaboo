@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 from hide_seek import ADJ, BELL_BY_DIST, ROOMS, distance
+from catch_flavor import mood_suffix
 
 
 BELIEF_PATH = Path("data/hide_seek_belief.json")
@@ -112,31 +113,35 @@ class BeliefMap:
                 best = n
         return best
 
-    def reason(self, obs_bell: float, my_room: str, holding_breath: bool = False, same_room: bool = False) -> str:
+    def reason(self, obs_bell: float, my_room: str, holding_breath: bool = False, same_room: bool = False, turn: int = 0) -> str:
         # 6/23 v0.3.1 P0：reason 自然语言化、不再暴露 bell / prob 小数。
         # 朝灯端能看 AI 在 reason 但不能反推具体距离/概率、保留"猜不透 AI 在想什么"的张力。
         # v0.4：屏息要先于 same_room 判定——屏息时 AI 不"翻藏点"、回信号漂移分支。
+        # v0.5：reason 后缀加情绪——屏息识破、belief 漂掉、太久抓不到都会冒情绪（catch_flavor.mood_suffix）
         top = self.top(2)
         a, ap = top[0]
         b, bp = top[1]
         nxt = self.suggest_next(my_room)
         conf_a = _conf_word(ap)
         if holding_breath:
-            return (
+            base = (
                 f"她屏住气了、信号在漂——{conf_a}在 {a}、"
                 f"{('试 ' + nxt + '、不确定') if nxt != my_room else '原地等一回合'}"
             )
-        if same_room:
+        elif same_room:
             # v0.3.2 P1：进同房间不再立刻抓到、要 /搜 藏点。reason 改成"翻藏点"语义。
-            return f"她就在 {my_room} 里——翻翻藏点"
-        bell_w = _bell_word(obs_bell)
-        if a == my_room:
-            tail = f"她可能就在 {my_room}、试探一下"
-        elif a in ADJ.get(my_room, []):
-            tail = f"去 {a} 试一下"
+            base = f"她就在 {my_room} 里——翻翻藏点"
         else:
-            tail = f"先往 {nxt} 靠"
-        return f"铃铛{bell_w}、{conf_a}在 {a}、{tail}"
+            bell_w = _bell_word(obs_bell)
+            if a == my_room:
+                tail = f"她可能就在 {my_room}、试探一下"
+            elif a in ADJ.get(my_room, []):
+                tail = f"去 {a} 试一下"
+            else:
+                tail = f"先往 {nxt} 靠"
+            base = f"铃铛{bell_w}、{conf_a}在 {a}、{tail}"
+        suffix = mood_suffix(turn, holding_breath, ap)
+        return f"{base} {suffix}" if suffix else base
 
     def to_dict(self) -> dict:
         return {"probs": self.probs}
@@ -180,7 +185,7 @@ def apply_observation(obs: dict) -> dict:
     holding = bool(obs.get("holding_breath", False))
     belief.update(bell, my_room, holding_breath=holding, same_room=same_room)
     save_belief(belief)
-    reason = belief.reason(bell, my_room, holding_breath=holding, same_room=same_room)
+    reason = belief.reason(bell, my_room, holding_breath=holding, same_room=same_room, turn=int(obs.get("turn", 0)))
     next_room = belief.suggest_next(my_room)
     return {"reason": reason, "top": belief.top(2), "probs": belief.probs, "next_room": next_room}
 
